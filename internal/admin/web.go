@@ -265,26 +265,51 @@ const adminDashboardHTML = `<!doctype html>
       $("levelA").textContent = counts.A || 0;
       $("levelB").textContent = counts.B || 0;
       $("levelC").textContent = counts.C || 0;
-      $("usersBody").innerHTML = users.map(user => `
-        <tr>
-          <td><strong>${escapeHTML(user.username)}</strong><div class="muted">${escapeHTML(user.email || user.id)}</div></td>
-          <td><span class="badge level-${user.level}">${user.level}</span></td>
-          <td>${user.coins}</td>
-          <td>${user.created_at ? new Date(user.created_at).toLocaleString() : "-"}</td>
-          <td>
-            <div class="actions">
-              <select id="level-${user.id}">
-                <option ${user.level === "A" ? "selected" : ""}>A</option>
-                <option ${user.level === "B" ? "selected" : ""}>B</option>
-                <option ${user.level === "C" ? "selected" : ""}>C</option>
-              </select>
-              <button class="secondary" onclick="updateLevel('${user.id}')">改等级</button>
-              <input id="coin-${user.id}" type="number" value="10" style="width:88px">
-              <button class="secondary" onclick="changeCoins('${user.id}')">调金币</button>
-            </div>
-          </td>
-        </tr>
-      `).join("");
+      const body = $("usersBody");
+      body.innerHTML = "";
+      for (const user of users) {
+        const tr = document.createElement("tr");
+        const createdAt = user.created_at ? new Date(user.created_at).toLocaleString() : "-";
+        tr.innerHTML =
+          "<td><strong></strong><div class=\"muted\"></div></td>" +
+          "<td><span class=\"badge\"></span></td>" +
+          "<td></td>" +
+          "<td></td>" +
+          "<td><div class=\"actions\"></div></td>";
+        tr.querySelector("strong").textContent = user.username;
+        tr.querySelector(".muted").textContent = user.email || user.id;
+        const badge = tr.querySelector(".badge");
+        badge.classList.add("level-" + user.level);
+        badge.textContent = user.level;
+        tr.children[2].textContent = user.coins;
+        tr.children[3].textContent = createdAt;
+
+        const actions = tr.querySelector(".actions");
+        const select = document.createElement("select");
+        select.id = "level-" + user.id;
+        for (const level of ["A", "B", "C"]) {
+          const option = document.createElement("option");
+          option.value = level;
+          option.textContent = level;
+          option.selected = user.level === level;
+          select.appendChild(option);
+        }
+        const levelButton = document.createElement("button");
+        levelButton.className = "secondary";
+        levelButton.textContent = "改等级";
+        levelButton.onclick = () => updateLevel(user.id);
+        const coinInput = document.createElement("input");
+        coinInput.id = "coin-" + user.id;
+        coinInput.type = "number";
+        coinInput.value = "10";
+        coinInput.style.width = "88px";
+        const coinButton = document.createElement("button");
+        coinButton.className = "secondary";
+        coinButton.textContent = "调金币";
+        coinButton.onclick = () => changeCoins(user.id);
+        actions.append(select, levelButton, coinInput, coinButton);
+        body.appendChild(tr);
+      }
     }
 
     async function createUser() {
@@ -343,10 +368,6 @@ const adminDashboardHTML = `<!doctype html>
       } catch (err) {
         setMsg(err.message, false);
       }
-    }
-
-    function escapeHTML(value) {
-      return String(value).replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[ch]));
     }
 
     if (adminToken) {
